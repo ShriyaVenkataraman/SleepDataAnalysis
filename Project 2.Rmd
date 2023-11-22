@@ -120,11 +120,6 @@ sleepDataanalysis <- data.frame(
 
 print(sleepDataanalysis)
 
-# library(kableExtra)
-# kable(sleepDataanalysis)
-# kable_styling(kbl(sleepDataanalysis, col.names = c('Variable', 'Data Types', 'Description')), full_width = FALSE)
-
-
 ```
 Here is my table describing all the data types in my cleaned dataset.
 
