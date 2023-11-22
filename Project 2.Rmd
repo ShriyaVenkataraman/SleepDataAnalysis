@@ -1,0 +1,313 @@
+---
+title: "Project 2"
+author: Shriya Venkataraman
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+date: "2023-11-10"
+---
+
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80))
+
+```
+
+**#1: INTRODUCTION**
+
+The dataset I chose for this project looks at sleep duration and its relationship with other daily habits. It looks at  health and lifestyle factors like blood pressure and stress levels to name a few, and also looks at physiological measures  like gender, age, and job occupation. The focus is how these various variables can affect one's sleep duration. The dataset comprises of 374 people, both male and female,  and their individual statistics and how that affects their sleep. 
+I was interested in this dataset because I have noticed a significant change in my health and my sleep patterns ever since I have entered college and been a part of this lifestyle. It is an interest of mine to find out how these various factors are interconnected and can affect each other, all under the looming context of sleep in itself. 
+
+**#2: DATA PREPARATION**
+I got my dataset from an open data portal called Kaggle. It was very easy to download the data as it already came in a .csv file.
+```{r echo=FALSE, warning=FALSE}
+library(tidyverse)
+sleepData = read.csv('SleepDataset.csv')
+as_tibble(sleepData)
+```
+
+Looking at the data in the BMI Category column, I noticed that some of the values reported were called "Normal Weight" while others were called "Normal". I wanted the category of the BMI's to be uniform, especially because both meant the same category. I used an if statement within a for loop to look through all the BMI values and rename them to "Normal" if it is printed as "Normal Weight". There are three categories I noticed that were attributed to the people in the study after looking at the data: "Overweight", "Normal", and "Obese".
+
+```{r echo=FALSE}
+for (i in 1:length(sleepData$BMI.Category)) {
+  if (sleepData$BMI.Category[i] == "Normal Weight") {
+    sleepData$BMI.Category[i] <- "Normal"
+  }
+}
+head(sleepData)
+```
+
+
+I then checked to make sure all the values that had numbers that would be imperative for me to analyze were numeric values. These are the values I checked: 
+-Sleep Duration
+
+-Quality of Sleep
+
+-Physical Activity Level 
+
+-Stress Level 
+
+-Heart Rate
+
+-Daily Steps
+
+-Blood Pressure
+
+And these are the results: 
+```{r echo=FALSE}
+
+is.numeric(sleepData$Sleep.Duration)
+is.numeric(sleepData$Quality.of.Sleep)
+is.numeric(sleepData$Physical.Activity.Level)
+is.numeric(sleepData$Stress.Level)
+is.numeric(sleepData$Heart.Rate)
+is.numeric(sleepData$Daily.Steps)
+is.numeric(sleepData$Blood.Pressure)
+```
+
+Looking through my dataset, I noticed that there are no "NA" values that need to be removed, keeping the number of observations consistently 374. 
+
+```{r echo=FALSE}
+sleepData1 <- subset(sleepData, select = -Person.ID)
+
+sleepData1 <- separate(sleepData, Blood.Pressure, into=c("Blood Pressure Systolic", "Blood Pressure Diastolic"), sep="/") #separating numerator and denominator into two separate variables. 
+
+sleepData1$`Blood Pressure Systolic` <- as.numeric(sleepData1$`Blood Pressure Systolic`)
+sleepData1$`Blood Pressure Diastolic` <- as.numeric(sleepData1$`Blood Pressure Diastolic`) 
+
+
+
+```
+
+First, I decided to remove the Person.ID variable because it reiterated the number of the person in a sequential order and would not serve any purpose in my analysis. I created a subset data that took this value out. 
+
+The blood pressure variable was initially written in "a/b" format, with a representing the systolic number and 80 representing diastolic number. I wanted to differentiate the two because both numbers represents amounts of pressure along different places in the heart, and individually it could indicate different health concerns or benefits. I parsed the "a/b" blood pressure value into two other variables of interest, the systolic and diastolic blood pressure number respectively. 
+
+I didn't have any difficulties in processing my data because it came in a very manageable manner where I didn't have to do much cleaning up besides renaming a few variables. 
+
+**#3: VARIABLE DESCRIPTIONS**
+
+```{r echo=FALSE}
+library(dplyr)
+
+sleepDatafocused <- sleepData1 %>% 
+  select(-Quality.of.Sleep, -Daily.Steps) 
+
+head(sleepDatafocused)
+```
+
+I removed Quality of Sleep and Daily Steps from my dataset and created this subset. I felt that Quality of Sleep and the Sleep Duration variable would be too redundant, and it would be more effective to look at one singular variable that expresses the length of sleep based on many factors. I also felt the Daily Steps variable was too closely tied to the Physical Activity variable, and that having two similar variables is inefficient in conveying the relation of sleep and these lifestyle and health factors. 
+
+```{r echo = FALSE}
+
+column_names <- c("Gender", "Age", "Sleep Duration", "Physical Activity Level",
+                  "Stress Level", "BMI Category", "Blood Pressure Systolic","Blood Pressure Diastolic",
+                  "Heart Rate", "Sleep Disorder")
+
+data_types <- c("character", "numeric", "numeric", "numeric",
+                "numeric", "character", "numeric","numeric", "numeric", "character")
+
+description <- c("Male/Female", "Ranging from 27 to 59", "Hours a person sleeps per day, ranging from 6.1 to 8.5 hours", "The number of minutes the person is physically active in a day",
+                "Stress Level on a scale from 1 to 10", "Either Normal, Overweight, or Obese", "Blood Pressure Systolic is normally 120","Blood Pressure Diastolic is normally 80", "Rest heart rate xpressed in beats per minute", "The presence or absence of disorders like Sleep Apnea and Insomnia")
+
+sleepDataanalysis <- data.frame(
+  Variable = column_names,
+  Data_Types = data_types,
+  Description = description,
+  stringsAsFactors = FALSE
+)
+
+print(sleepDataanalysis)
+
+# library(kableExtra)
+# kable(sleepDataanalysis)
+# kable_styling(kbl(sleepDataanalysis, col.names = c('Variable', 'Data Types', 'Description')), full_width = FALSE)
+
+
+```
+Here is my table describing all the data types in my cleaned dataset.
+
+**#4: UNIVARIATE ANALYSES**
+
+```{r echo=FALSE}
+
+
+ggplot(sleepDatafocused, aes(x = Sleep.Duration)) +
+  geom_histogram(binwidth = 0.1, col = 'black', fill = 'lightsalmon2') +
+  xlab('Sleep Duration') +
+  ggtitle('Distribution of Sleep Duration') +
+  theme_classic()
+
+fivenum(sleepDatafocused$Sleep.Duration)
+```
+
+The data above shows that most people get around 7.2 hours of sleep. As seen, the distribution of hours of sleep is quite equally distributed and not outrightly skewed particularly anywhere. 
+
+```{r echo=FALSE}
+
+ggplot(sleepDatafocused, aes(x = Physical.Activity.Level)) +
+  geom_histogram(binwidth = 3.5, col = 'black', fill = 'palevioletred2') +
+  xlab('Physical Activity Level') +
+  ggtitle('Distribution of Physical Activity Level') +
+  theme_classic()
+mean(round(sleepDatafocused$Physical.Activity.Level),2)
+```
+
+This graph was interesting and although the mean is 60 minutes per day, the amount of people having levels of physical activity changes drastically per minute. People tend to be active more on a 10-minute basis, where they work out for a set period of time like 30, 40, 50, or 60 minutes for example, rather than working out for an incomplete amount of time like 43 minutes. 
+
+```{r echo=FALSE}
+ggplot(sleepDatafocused, aes(x = `Blood Pressure Systolic`)) +
+  geom_histogram(binwidth = 3.5, col = 'black', fill = 'mistyrose2') +
+  xlab('Blood Pressure Systolic') +
+  ggtitle('Distribution of Systolic Blood Pressure') +
+  theme_classic()
+
+mean(round(sleepDatafocused$`Blood Pressure Systolic`),2)
+
+```
+
+The average systolic blood pressure level is 130, which is still healthy but still slightly more than the normal level which should be 120. This shows that the people whose data I am analyzing may have some predispositioned health problems. 
+  
+```{r echo=FALSE, warning=FALSE}
+
+ggplot(sleepDatafocused, aes(x = Stress.Level)) +
+  geom_histogram(binwidth = 1, col = 'black', fill = 'paleturquoise3') +
+  xlab('Stress Level') +
+  ggtitle('Distribution of Stress Level') +
+  theme_classic()
+fivenum(sleepDatafocused$Stress.Level)
+
+mean(sleepDatafocused$StressLevel)
+
+```
+
+The average stress level is 5/10, which is what was expected. However, the stress level for this group of people doesn't go below 3/10 or exceed an 8 for the people, showing that the group of people aren't necessarily outrightly stressed to an extreme level. 
+
+
+**#5: MULTIVARIATE ANALYSES**
+
+Here, I implemented one of the choice elements and I used a FOR LOOP to find the average sleep people gets based on occupation. Then I outputted a table with the mean sleep duration based on occupation. 
+
+```{r echo=FALSE, warning = FALSE}
+occupation_sleep = unique(sleepDatafocused$Occupation[sleepDatafocused$Occupation!= ""])
+print(occupation_sleep)
+
+result_data <- data.frame()
+ 
+ for (occupation in occupation_sleep) {
+   
+   type_occupation <- sleepDatafocused[sleepDatafocused$Occupation == occupation, ]
+   mean_score <- round(mean(type_occupation$Sleep.Duration), 2)
+   occupation_mean <- data.frame(Occupation = occupation, Mean_Sleep_Duration = mean_score)
+   result_data <- rbind(result_data, occupation_mean)
+ }
+
+print(result_data)
+fivenum(result_data$Mean_Sleep_Duration)
+```
+Here I created a histogram that plots this. As one can see, Engineers 
+get the highest average amount of sleep while sales representatives get the least. The average sleep duration across all occupations is 6.9 hours. 
+```{r echo=FALSE}
+library(ggplot2)
+ggplot(result_data, aes(x = Occupation, y = Mean_Sleep_Duration)) +
+  geom_col(binwidth = 1, col = 'palevioletred4', fill = 'deeppink2') +
+  xlab('Occupation') +
+  ylab('Sleep Duration') +
+  ggtitle('Relationship between Occupation and Sleep Duration') +
+  theme_classic() 
+
+```
+
+```{r echo=FALSE}
+library(ggplot2)
+ggplot(sleepDatafocused, aes(x = Physical.Activity.Level, y = Sleep.Duration)) +
+  geom_point(col = 'plum4') +
+  xlab('Physical Activity Level') +
+  ylab('Sleep Duration') +
+  ggtitle('Relationship between Physical Activity Level and Sleep Duration') +
+  theme_classic()
+
+cor(sleepDatafocused$Physical.Activity.Level,sleepDatafocused$Sleep.Duration)
+```
+
+The correlation between these two variables is quite weak but positive, at around 0.2. This means that a change in one of these variables would only slightly impact the other in the same direction. There is an upward trend in the positive direciton though. 
+```{r echo=FALSE}
+library(ggplot2)
+ggplot(sleepDatafocused) + geom_histogram(aes(x=Sleep.Duration, fill=Gender, binwidth = 10)) + labs(title='Sleep Duration based on Gender',x='Sleep Duration (in hours)',y='Frequency') + theme(legend.position='bottom') +facet_wrap(~Gender) 
+
+
+
+```
+
+As seen in this graph and looking at the spread of data, more males tend to get  7-8 hours than females but females also tend to have a wider range of sleep hours they can get. In this dataset, most females have around 7 hours of sleep, but it is still less than the amount of males who sleep for this duration. There are more females who sleep between 8 and 8.5 hours than males. The overall average sleep duration for females is higher than males, though. 
+
+```{r echo=FALSE}
+
+ggplot(sleepDatafocused, aes(x = Sleep.Duration, fill = Sleep.Disorder)) +
+  geom_histogram(binwidth = 0.2) +
+  labs(title = 'Sleep Duration based on Sleep Disorder',
+       x = 'Sleep Duration (in hours)',
+       y = 'Frequency') +
+  theme(legend.position = 'bottom') +
+  facet_wrap(~Sleep.Disorder) +
+  theme_classic()
+
+```
+
+As seen in this graph, those with no sleep disorder have a nice distribution in their sleep duration, with most sleep around 7 hours. More people with insomnia have lesser hours of sleep, around 6 to 6.5. Sleep Apnea shows extremes based on this graph, where people tend to have a lot of sleep (8+ hours) or less sleep (<6.5 hours). 
+
+```{r echo = FALSE}
+ggplot(sleepDatafocused, aes(x = Heart.Rate, y = Sleep.Duration)) +
+  geom_point(col = 'rosybrown2') +
+  xlab('Heart Rate') +
+  ylab('Sleep Duration') +
+  ggtitle('Relationship between Heart Rate and Sleep Duration') +
+  theme_classic()
+
+cor(sleepDatafocused$Heart.Rate,sleepDatafocused$Sleep.Duration)
+```
+As seen here there is a negative correlation between heart rate and sleep duration, showing that one can negatively affect the other. While there are many outliers seen in the graphs, the general trend based on the correlation coefficient is people with lower heart rates tend to sleep for longer durations than those with higher heart rates.
+
+
+```{r echo=FALSE}
+ggplot(sleepDatafocused, aes(x = Gender, y = Age, fill = Sleep.Disorder)) + geom_bar(stat = "identity", position = "dodge", alpha = 0.7) +
+  labs(title = 'Ages affected for each type of Sleep Disorder',
+       x = 'Gender',
+       y = 'Age',
+       fill = 'Sleep Disorder') +
+  scale_fill_manual(values = c('purple4', 'blue', 'violetred')) +
+  theme_classic()
+```
+
+Here, one can see that females around age 60 tend to be more affeccted by sleep apnea, while those around age 50 tend to be more affected by insomnia. The females tend to be older than the males who are affected by these disorders, as males around age ~45 tend to be affected by both insomnia and sleep apnea. 
+
+
+**Choice Elements and Conclusion**
+
+
+```{r}
+library(stringr)
+
+correlation_function <- function(variable1, variable2) {
+  if (!(is.numeric(sleepData[[variable1]]) && is.numeric(sleepData[[variable2]]))) {
+    stop("Your variables are not numeric")
+  }
+  
+  my_correlation <- cor(sleepData[[variable1]], sleepData[[variable2]])
+  return(my_correlation)
+  print(my_correlation)
+
+}
+
+```
+Here is another choice element that I created. I thought a function would be useful where the user can input two numeric variable and can see the correlation coefficient between them. If they do not print a numeric variable, they will get a warning. 
+
+
+Besides this, I created two new variables of interest, which were the blood pressure variations. I also parsed to create these two variables from the original variable which was just blood pressure. I created a user function, used a loop, and also used an if statement. 
+
+Overall, I calculated the effects of various factors on primarily sleep duration, and found that and strongly found that ages, heart rate, and disorders strongly affect it. I thought it was interesting to find out the differences in sleep quality based on gender, as men are a bit more susceptible to sleep problems and disorders than women. For example, men at a younger age, are susceptible to sleep disorders, and also tend to sleep for a lower range of hours as compared to women. I also found it interesting that on average, sales representatives tend to get less sleep as this was oppposite to my hypothesis of jobs like software engineers and doctors have the least sleep. Overall, this investigation was imperative to bettering my understanding of sleep and the pyschological and physical attributes that can affect it as well. 
+
+**Citation and References**
+
+Tharmalingam, Laksika. “Sleep Health and Lifestyle Dataset.” Kaggle, 18 Sept. 2023, www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset/data. 
